@@ -17,14 +17,20 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await signIn("credentials", { ...form, redirect: false });
+      const res = await signIn("credentials", {
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        redirect: false,
+      });
       if (res?.ok) {
         toast.success("Welcome back!");
-        router.push("/dashboard");
+        router.replace("/dashboard");
         router.refresh();
       } else {
         toast.error("Invalid email or password");
       }
+    } catch {
+      toast.error("Could not sign in. Please try again.");
     } finally {
       setLoading(false);
     }

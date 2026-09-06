@@ -17,24 +17,37 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      const email = form.email.trim().toLowerCase();
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, email }),
       });
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error ?? "Registration failed");
         return;
       }
-      toast.success(`Welcome! Your HDYU ID is ${data.userId}`);
+
       const login = await signIn("credentials", {
-        email: form.email,
+        email,
         password: form.password,
         redirect: false,
       });
-      if (login?.ok) router.push("/dashboard");
-      else router.push("/login");
+
+      if (!login?.ok) {
+        toast.success(`Account created. Your HDYU ID is ${data.userId}. Please sign in.`);
+        router.replace("/login");
+        return;
+      }
+
+      toast.success(`Welcome! Your HDYU ID is ${data.userId}`);
+      router.replace("/dashboard");
+      // Refresh server components so the protected dashboard layout receives
+      // the session cookie created by signIn immediately.
+      router.refresh();
+    } catch {
+      toast.error("Could not create your account. Please try again.");
     } finally {
       setLoading(false);
     }
