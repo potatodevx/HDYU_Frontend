@@ -3,9 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePrototypeAuth } from "@/components/prototype-auth";
 
 const LINKS = [
   { href: "/#vision", label: "Vision" },
@@ -16,7 +16,7 @@ const LINKS = [
 ];
 
 export function Navbar() {
-  const { data: session } = useSession();
+  const { user } = usePrototypeAuth();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -55,9 +55,9 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          {session ? (
-            <Link href={session.user.role === "ADMIN" ? "/admin" : "/dashboard"} className="btn-primary !py-2">
-              {session.user.role === "ADMIN" ? "Admin Panel" : "Dashboard"}
+          {user ? (
+            <Link href={user.role === "ADMIN" ? "/admin" : "/dashboard"} className="btn-primary !py-2">
+              {user.role === "ADMIN" ? "Admin Panel" : "Dashboard"}
             </Link>
           ) : (
             <>
@@ -97,13 +97,13 @@ export function Navbar() {
               </Link>
             ))}
             <div className="flex gap-3 pt-2">
-              {session ? (
+              {user ? (
                 <Link
-                  href={session.user.role === "ADMIN" ? "/admin" : "/dashboard"}
+                  href={user.role === "ADMIN" ? "/admin" : "/dashboard"}
                   className="btn-primary flex-1 !py-2"
                   onClick={() => setOpen(false)}
                 >
-                  {session.user.role === "ADMIN" ? "Admin Panel" : "Dashboard"}
+                  {user.role === "ADMIN" ? "Admin Panel" : "Dashboard"}
                 </Link>
               ) : (
                 <>

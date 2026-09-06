@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import {
@@ -15,6 +14,8 @@ import { CheckCircle2, ExternalLink, Loader2, Send, User, AlertTriangle } from "
 import { WalletLinkCard } from "@/components/dashboard/wallet-link";
 import { useHdyuBalance, HDYU_MINT, HDYU_DECIMALS } from "@/hooks/use-hdyu";
 import { formatHdyu, shortAddress } from "@/lib/utils";
+import { usePrototypeAuth } from "@/components/prototype-auth";
+import { findPrototypeUserByHdyuId } from "@/lib/prototype-storage";
 
 const CLUSTER_SUFFIX =
   process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "mainnet-beta" ? "" : "?cluster=devnet";
@@ -27,11 +28,11 @@ interface Resolved {
 }
 
 export default function SendPage() {
-  const { data: session } = useSession();
+  const { user } = usePrototypeAuth();
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
 
-  const linked = session?.user.walletAddress ?? null;
+  const linked = user?.walletAddress ?? null;
   const { balance, refresh } = useHdyuBalance(linked);
 
   const [recipientInput, setRecipientInput] = useState("");
@@ -49,11 +50,22 @@ export default function SendPage() {
     setResolving(true);
     setResolved(null);
     try {
-      const res = await fetch(`/api/resolve?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not resolve recipient");
-      if (data.address === linked) throw new Error("You cannot send HDYU to yourself");
-      setResolved(data);
+      let result: Resolved;
+      try {
+        result = { address: new PublicKey(q).toBase58(), type: "address" };
+      } catch {
+        const matchedUser = findPrototypeUserByHdyuId(q);
+        if (!matchedUser) throw new Error("No HDYU user found with that ID on this browser");
+        if (!matchedUser.walletAddress) throw new Error("That user has not linked a wallet yet");
+        result = {
+          address: matchedUser.walletAddress,
+          type: "user",
+          userId: matchedUser.hdyuId,
+          name: matchedUser.name,
+        };
+      }
+      if (result.address === linked) throw new Error("You cannot send HDYU to yourself");
+      setResolved(result);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Recipient lookup failed");
     } finally {

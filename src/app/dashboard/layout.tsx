@@ -1,13 +1,12 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { DashboardShell } from "@/components/dashboard/shell";
+import { ProtectedRoute } from "@/components/prototype-auth";
 
 export const metadata = { title: "Dashboard" };
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) redirect("/login");
-
-  return <DashboardShell>{children}</DashboardShell>;
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <DashboardShell>{children}</DashboardShell>
+    </ProtectedRoute>
+  );
 }

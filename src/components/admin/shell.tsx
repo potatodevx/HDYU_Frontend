@@ -3,10 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Users, HandCoins, LogOut, Menu, X, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePrototypeAuth } from "@/components/prototype-auth";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
@@ -16,7 +16,8 @@ const NAV = [
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const router = useRouter();
+  const { user, logout } = usePrototypeAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const sidebar = (
@@ -60,11 +61,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
         <div className="flex items-center justify-between px-1">
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-white">{session?.user.name}</div>
-            <div className="truncate text-xs text-emerald-100/40">{session?.user.email}</div>
+            <div className="truncate text-sm font-semibold text-white">{user?.name}</div>
+            <div className="truncate text-xs text-emerald-100/40">{user?.email}</div>
           </div>
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => {
+              logout();
+              router.replace("/");
+            }}
             className="rounded-lg p-2 text-emerald-100/50 transition hover:bg-white/5 hover:text-white"
             title="Sign out"
           >

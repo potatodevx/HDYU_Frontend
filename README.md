@@ -1,4 +1,8 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HDYU Frontend Prototype
+
+This is the browser-only HDYU prototype. It does not require a database or environment variables.
+
+Prototype accounts, passwords, generated HDYU IDs, linked-wallet details, and reward submissions are stored in the browser's `localStorage`. This is intentionally convenient for client demonstrations, but it is not secure or shared between devices and must be replaced by server-side authentication and a database before production.
 
 ## Getting Started
 
@@ -15,6 +19,12 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Vercel
+
+Connect this repository to Vercel and deploy with the default Next.js settings. No environment variables are required for the prototype. Solana features use Devnet and the public Devnet RPC by default.
+
+The optional `NEXT_PUBLIC_RPC_URL`, `NEXT_PUBLIC_SOLANA_CLUSTER`, and `NEXT_PUBLIC_HDYU_MINT` variables can override those defaults later, but they are not needed for the current demo.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

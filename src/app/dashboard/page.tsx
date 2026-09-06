@@ -1,18 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { ArrowRight, Sprout } from "lucide-react";
 import { WalletLinkCard } from "@/components/dashboard/wallet-link";
 import { BalanceCard } from "@/components/dashboard/balance-card";
 import { AddTokenCard } from "@/components/dashboard/add-token-card";
 import { TransactionList } from "@/components/dashboard/tx-list";
 import { useActivities } from "@/hooks/use-hdyu";
+import { usePrototypeAuth } from "@/components/prototype-auth";
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  const { user } = usePrototypeAuth();
   const { activities } = useActivities();
-  const wallet = session?.user.walletAddress ?? null;
+  const wallet = user?.walletAddress ?? null;
 
   const pendingCount = activities.filter((a) => a.status === "PENDING").length;
   const earned = activities
@@ -23,7 +23,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-extrabold text-white">
-          Welcome back{session?.user.name ? `, ${session.user.name.split(" ")[0]}` : ""}
+          Welcome back{user?.name ? `, ${user.name.split(" ")[0]}` : ""}
         </h1>
         <p className="mt-1 text-sm text-emerald-100/50">
           Your green ecosystem hub — earn, hold and use HDYU.

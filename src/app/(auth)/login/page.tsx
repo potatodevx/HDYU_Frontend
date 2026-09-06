@@ -4,12 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { usePrototypeAuth } from "@/components/prototype-auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = usePrototypeAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
 
@@ -17,17 +18,12 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await signIn("credentials", {
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-        redirect: false,
-      });
-      if (res?.ok) {
+      const result = login(form.email, form.password);
+      if (result.ok) {
         toast.success("Welcome back!");
         router.replace("/dashboard");
-        router.refresh();
       } else {
-        toast.error("Invalid email or password");
+        toast.error(result.error);
       }
     } catch {
       toast.error("Could not sign in. Please try again.");
@@ -44,6 +40,9 @@ export default function LoginPage() {
       </Link>
       <h2 className="font-display text-2xl font-extrabold text-white">Welcome back</h2>
       <p className="mt-2 text-sm text-emerald-100/50">Sign in to your HDYU dashboard.</p>
+      <p className="mt-3 rounded-xl bg-emerald-400/8 px-3 py-2 text-xs text-emerald-100/55">
+        Prototype mode: use an account created on this browser.
+      </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <div>

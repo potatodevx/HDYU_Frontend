@@ -1,16 +1,16 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { Copy, Download } from "lucide-react";
 import { WalletLinkCard } from "@/components/dashboard/wallet-link";
 import { AddTokenCard } from "@/components/dashboard/add-token-card";
+import { usePrototypeAuth } from "@/components/prototype-auth";
 
 export default function ReceivePage() {
-  const { data: session } = useSession();
-  const wallet = session?.user.walletAddress ?? null;
-  const hdyuId = session?.user.hdyuId;
+  const { user } = usePrototypeAuth();
+  const wallet = user?.walletAddress ?? null;
+  const hdyuId = user?.hdyuId;
 
   function copy(value: string, label: string) {
     navigator.clipboard.writeText(value);

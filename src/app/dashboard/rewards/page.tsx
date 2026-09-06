@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { Loader2, Sprout, ExternalLink, Clock, CheckCircle2, XCircle, Coins } from "lucide-react";
 import { useActivities } from "@/hooks/use-hdyu";
 import { ACTIVITY_CATEGORIES, categoryLabel, formatDate } from "@/lib/utils";
 import { WalletLinkCard } from "@/components/dashboard/wallet-link";
+import { usePrototypeAuth } from "@/components/prototype-auth";
 
 const CLUSTER_SUFFIX =
   process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "mainnet-beta" ? "" : "?cluster=devnet";
@@ -20,27 +20,20 @@ const STATUS_UI: Record<string, { label: string; className: string; icon: typeof
 };
 
 export default function RewardsPage() {
-  const { data: session } = useSession();
-  const { activities, refresh, isLoading } = useActivities();
+  const { user } = usePrototypeAuth();
+  const { activities, submitActivity, isLoading } = useActivities();
   const [form, setForm] = useState({ category: "GREEN_ACTIVITY", title: "", description: "", proofUrl: "" });
   const [submitting, setSubmitting] = useState(false);
 
-  const wallet = session?.user.walletAddress ?? null;
+  const wallet = user?.walletAddress ?? null;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch("/api/activities", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Submission failed");
+      submitActivity(form);
       toast.success("Activity submitted for review");
       setForm({ category: "GREEN_ACTIVITY", title: "", description: "", proofUrl: "" });
-      refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Submission failed");
     } finally {
@@ -165,6 +158,11 @@ export default function RewardsPage() {
                     </span>
                   </div>
                   <p className="mt-3 text-sm leading-relaxed text-emerald-100/60">{a.description}</p>
+                  {a.status === "PENDING" && a.rewardAmount ? (
+                    <div className="mt-3 font-mono text-sm font-bold text-emerald-300">
+                      Estimated reward: {a.rewardAmount.toLocaleString()} HDYU
+                    </div>
+                  ) : null}
                   {(a.status === "PAID" || a.status === "APPROVED") && a.rewardAmount ? (
                     <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
                       <span className="font-mono font-bold text-emerald-300">

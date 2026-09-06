@@ -1,12 +1,12 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import { WalletLinkCard } from "@/components/dashboard/wallet-link";
 import { TransactionList } from "@/components/dashboard/tx-list";
+import { usePrototypeAuth } from "@/components/prototype-auth";
 
 export default function HistoryPage() {
-  const { data: session } = useSession();
-  const wallet = session?.user.walletAddress ?? null;
+  const { user } = usePrototypeAuth();
+  const wallet = user?.walletAddress ?? null;
 
   return (
     <div className="space-y-6">

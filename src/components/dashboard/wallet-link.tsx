@@ -3,11 +3,12 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useSession } from "next-auth/react";
-import bs58 from "bs58";
+import nacl from "tweetnacl";
 import { toast } from "sonner";
 import { Loader2, Link2, ShieldCheck, Unlink } from "lucide-react";
 import { shortAddress } from "@/lib/utils";
+import { usePrototypeAuth } from "@/components/prototype-auth";
+import { findPrototypeUserByWallet } from "@/lib/prototype-storage";
 
 const WalletMultiButton = dynamic(
   () => import("@solana/wallet-adapter-react-ui").then((m) => m.WalletMultiButton),
@@ -15,15 +16,14 @@ const WalletMultiButton = dynamic(
 );
 
 /**
- * Handles the full non-custodial wallet linking flow:
- * connect (Phantom/Solflare) -> sign verification message -> server verifies -> linked.
+ * Prototype linking flow: connect -> sign -> verify locally -> save to this browser.
  */
 export function WalletLinkCard() {
   const { publicKey, signMessage, disconnect } = useWallet();
-  const { data: session, update } = useSession();
+  const { user, updateUser } = usePrototypeAuth();
   const [busy, setBusy] = useState(false);
 
-  const linkedAddress = session?.user.walletAddress ?? null;
+  const linkedAddress = user?.walletAddress ?? null;
   const connectedAddress = publicKey?.toBase58() ?? null;
 
   async function linkWallet() {
@@ -33,21 +33,18 @@ export function WalletLinkCard() {
     }
     setBusy(true);
     try {
-      const nonceRes = await fetch("/api/wallet/nonce", { method: "POST" });
-      const { message, error } = await nonceRes.json();
-      if (!nonceRes.ok) throw new Error(error ?? "Could not start verification");
-
-      const signature = await signMessage(new TextEncoder().encode(message));
-
-      const linkRes = await fetch("/api/wallet/link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address: connectedAddress, signature: bs58.encode(signature) }),
-      });
-      const data = await linkRes.json();
-      if (!linkRes.ok) throw new Error(data.error ?? "Linking failed");
-
-      await update();
+      const alreadyLinked = findPrototypeUserByWallet(connectedAddress);
+      if (alreadyLinked && alreadyLinked.email !== user?.email) {
+        throw new Error("This wallet is already linked to another local prototype account.");
+      }
+      const message = new TextEncoder().encode(
+        `HDYU prototype wallet verification\nHDYU ID: ${user?.hdyuId}\nWallet: ${connectedAddress}`
+      );
+      const signature = await signMessage(message);
+      if (!publicKey || !nacl.sign.detached.verify(message, signature, publicKey.toBytes())) {
+        throw new Error("Wallet signature verification failed");
+      }
+      updateUser({ walletAddress: connectedAddress });
       toast.success("Wallet linked to your HDYU account");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Wallet linking failed");
@@ -59,9 +56,7 @@ export function WalletLinkCard() {
   async function unlinkWallet() {
     setBusy(true);
     try {
-      const res = await fetch("/api/wallet/link", { method: "DELETE" });
-      if (!res.ok) throw new Error("Could not unlink wallet");
-      await update();
+      updateUser({ walletAddress: null });
       await disconnect().catch(() => {});
       toast.success("Wallet unlinked");
     } catch (e) {

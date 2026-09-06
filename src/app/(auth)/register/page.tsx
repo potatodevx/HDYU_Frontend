@@ -4,12 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { usePrototypeAuth } from "@/components/prototype-auth";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { register } = usePrototypeAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
 
@@ -17,35 +18,13 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const email = form.email.trim().toLowerCase();
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, email }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error ?? "Registration failed");
+      const result = register(form);
+      if (!result.ok) {
+        toast.error(result.error);
         return;
       }
-
-      const login = await signIn("credentials", {
-        email,
-        password: form.password,
-        redirect: false,
-      });
-
-      if (!login?.ok) {
-        toast.success(`Account created. Your HDYU ID is ${data.userId}. Please sign in.`);
-        router.replace("/login");
-        return;
-      }
-
-      toast.success(`Welcome! Your HDYU ID is ${data.userId}`);
+      toast.success(`Welcome! Your HDYU ID is ${result.user.hdyuId}`);
       router.replace("/dashboard");
-      // Refresh server components so the protected dashboard layout receives
-      // the session cookie created by signIn immediately.
-      router.refresh();
     } catch {
       toast.error("Could not create your account. Please try again.");
     } finally {
@@ -62,6 +41,9 @@ export default function RegisterPage() {
       <h2 className="font-display text-2xl font-extrabold text-white">Create your account</h2>
       <p className="mt-2 text-sm text-emerald-100/50">
         Free forever. You&apos;ll get a unique HDYU User ID.
+      </p>
+      <p className="mt-3 rounded-xl bg-emerald-400/8 px-3 py-2 text-xs text-emerald-100/55">
+        Prototype mode: this account is saved only in this browser.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
